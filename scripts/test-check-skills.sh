@@ -9,7 +9,7 @@ for item in skills scripts README.md LICENSE AGENTS.md CHANGELOG.md \
   [ -e "$repo/$item" ] && cp -R "$repo/$item" "$scratch/"
 done
 mkdir -p "$scratch/docs"
-for doc in testing.md compatibility.md; do
+for doc in testing.md; do
   [ -f "$repo/docs/$doc" ] && cp "$repo/docs/$doc" "$scratch/docs/"
 done
 cd "$scratch"
