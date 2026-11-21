@@ -15,5 +15,18 @@ Checked 2026-11-21 on Linux.
 | `npx -y skills-ref validate skills/terminal-ux` | Fails only on `argument-hint`, a Claude Code extension kept on purpose |
 | Claude Code, local-checkout plugin, dogfooded by the author | The skill loaded and behaved as intended in the author's own use (reported "works perfectly"); not a scripted run of every `docs/testing.md` prompt |
 
-Not checked: behaviour in Codex, Antigravity and Pi sessions (only installation, below);
+### Installation from the public repository
+
+Checked 2026-11-21 on Linux, user scope, from `pinkroosterai/PinkRoosterTerminalUx` at v0.1.0.
+
+| Harness | Command | Result |
+|---|---|---|
+| Claude Code | `claude plugin marketplace add pinkroosterai/PinkRoosterTerminalUx`, `claude plugin install pinkrooster-terminal-ux@pinkrooster-terminal-ux` | Pass; listed 0.1.0, enabled |
+| Codex CLI | `codex plugin marketplace add pinkroosterai/PinkRoosterTerminalUx`, `codex plugin add pinkrooster-terminal-ux@pinkrooster-terminal-ux` | Pass; listed 0.1.0, installed and enabled |
+| Antigravity CLI | `agy plugin install https://github.com/pinkroosterai/PinkRoosterTerminalUx` | Pass; 1 skill installed (terminal-ux), listed 0.1.0, enabled |
+| Pi | `pi install git:github.com/pinkroosterai/PinkRoosterTerminalUx` | Pass; listed as a git package |
+
+These establish installation and discovery by each CLI, not model-driven loading or behaviour.
+
+Not checked: behaviour in Codex, Antigravity and Pi sessions (only installation, above);
 app and IDE surfaces; Windows and macOS.
