@@ -1,0 +1,17 @@
+{
+  "name": "pinkrooster-terminal-ux",
+  "interface": {
+    "displayName": "PinkRooster Terminal UX"
+  },
+  "plugins": [
+    {
+      "name": "pinkrooster-terminal-ux",
+      "source": "./",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

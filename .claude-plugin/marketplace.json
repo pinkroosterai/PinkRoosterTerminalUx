@@ -1,0 +1,15 @@
+{
+  "name": "pinkrooster-terminal-ux",
+  "description": "PinkRooster's terminal UI/UX design skill for coding agents.",
+  "owner": {
+    "name": "pinkroosterai"
+  },
+  "plugins": [
+    {
+      "name": "pinkrooster-terminal-ux",
+      "source": "./",
+      "description": "Terminal UI/UX design skill: designs, builds and audits command-line output, interactive prompts and full-screen TUIs to a high UX standard, in any language or framework.",
+      "version": "0.1.0"
+    }
+  ]
+}

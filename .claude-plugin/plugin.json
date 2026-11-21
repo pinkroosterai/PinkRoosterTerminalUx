@@ -1,0 +1,14 @@
+{
+  "name": "pinkrooster-terminal-ux",
+  "description": "Terminal UI/UX design skill: designs, builds and audits command-line output, interactive prompts and full-screen TUIs to a high UX standard, in any language or framework.",
+  "version": "0.1.0",
+  "author": {
+    "name": "pinkroosterai"
+  },
+  "license": "MIT",
+  "skills": [
+    "./skills/"
+  ],
+  "homepage": "https://github.com/pinkroosterai/PinkRoosterTerminalUx",
+  "repository": "https://github.com/pinkroosterai/PinkRoosterTerminalUx"
+}

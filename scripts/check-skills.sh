@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# Mechanical checks over every skill in this repo. Run before every commit.
+#
+# Every check prints OK: or FAIL:, and the script exits non-zero when any FAIL was printed,
+# so a check that did not run is visible as a missing line rather than a silent pass.
+#
+#   1. Agent Skills naming: `name` is lowercase a-z0-9 and single hyphens, at most 64
+#      characters, and matches its directory.
+#   2. A description of 1-1,024 characters.
+#   3. An unquoted argument-hint that YAML parses as a list.
+#   4. A SKILL.md over 500 lines; a reference over 100 lines without a Contents list.
+#      Role files (references/roles/) are exempt: a subagent reads its role whole.
+#   5. A Claude-Code-only name (a tool, parameter or variable) outside a line that says it is
+#      Claude Code's. The skills run in several harnesses; a bare Claude tool name reads as
+#      a claim that the tool exists everywhere.
+#   6. The skill's own contract (docs/terminal-ux/spec.md): 3-6 reference files, each
+#      linked from SKILL.md, and no UI framework or library named anywhere in the skill.
+#   7. Every `references/...` path named in backticks resolves from its skill's root (the
+#      Markdown-link check below only sees [text](target) links).
+set -u
+cd "$(dirname "$0")/.." || exit 1
+
+fails=0
+ok()   { printf 'OK:   %s\n' "$*"; }
+fail() { printf 'FAIL: %s\n' "$*"; fails=$((fails + 1)); }
+
+frontmatter() { awk 'NR==1 && $0!="---" {exit} NR>1 && /^---$/ {exit} NR>1' "$1"; }
+field() { frontmatter "$1" | awk -v k="$2" '
+  $0 ~ "^"k":" { sub("^"k":[ ]*", ""); v=$0; getline nx
+    while (nx ~ /^[ ]+[^ ]/ && nx !~ /^[a-z-]+:/) { v = v " " nx; if ((getline nx) <= 0) break }
+    gsub(/^[>|] */, "", v); print v; exit }'; }
+
+for d in skills/*/; do
+  d=${d%/}; f="$d/SKILL.md"; name="$(basename "$d")"
+  [ -f "$f" ] || { fail "$d has no SKILL.md"; continue; }
+
+  # Restricted frontmatter profile: single-line, unquoted name/description; quoted hint;
+  # optional single-line license and compatibility from the Agent Skills spec.
+  if ! awk 'NR==1 {if ($0!="---") exit 1; next}
+    /^---$/ {closed=1; exit}
+    !/^(name|description|argument-hint|license|compatibility): / {exit 1}
+    {split($0,a,":"); if (seen[a[1]]++) exit 1}
+    END {if (!closed) exit 1}' "$f"; then fail "$name: invalid restricted frontmatter"; fi
+  if frontmatter "$f" | grep -q 'disable-model-invocation'; then
+    fail "$name: every skill must remain model-invocable"
+  fi
+  if ! frontmatter "$f" | grep -qE '^argument-hint: ".*"$'; then
+    fail "$name: argument-hint must be a quoted scalar"
+  fi
+
+  # 1. Name.
+  n=$(field "$f" name)
+  if [ "$n" != "$name" ]; then fail "$name: name '$n' != directory"
+  elif ! printf '%s' "$n" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$' || [ ${#n} -gt 64 ]; then
+    fail "$name: name breaks the Agent Skills naming rule"
+  else ok "$name: name valid and matches directory"; fi
+
+  # 2. Description length.
+  dl=$(field "$f" description | tr -d '\n' | wc -c)
+  if [ "$dl" -ge 1 ] && [ "$dl" -le 1024 ]; then ok "$name: description $dl chars"
+  else fail "$name: description $dl chars (1-1024)"; fi
+  if frontmatter "$f" | grep -q '^compatibility:'; then
+    cl=$(field "$f" compatibility | tr -d '\n' | wc -c)
+    if [ "$cl" -ge 1 ] && [ "$cl" -le 500 ]; then ok "$name: compatibility $cl chars"
+    else fail "$name: compatibility $cl chars (1-500)"; fi
+  fi
+
+  # 3. argument-hint must be a quoted scalar.
+  if frontmatter "$f" | grep -qE '^argument-hint: *\['; then fail "$name: argument-hint is an unquoted [list]"; fi
+
+  # 4. Sizes.
+  ln=$(wc -l < "$f")
+  [ "$ln" -le 500 ] && ok "$name: SKILL.md $ln lines" || fail "$name: SKILL.md $ln lines (cap 500)"
+  while IFS= read -r r; do
+    rl=$(wc -l < "$r")
+    if [ "$rl" -gt 100 ] && ! sed -n '1,30p' "$r" | grep -qE '^## Contents'; then
+      fail "$name: ${r#"$d"/} is $rl lines with no '## Contents'"
+    fi
+  done < <(find "$d/references" -name '*.md' -not -path '*/roles/*' 2>/dev/null)
+
+  # 7. Backticked reference paths, resolved from the skill root.
+  missing=0
+  while IFS= read -r ref; do
+    case "$ref" in *'<'*|*'*'*) continue;; esac
+    [ -e "$d/$ref" ] || { fail "$name: names missing file $ref"; missing=1; }
+  done < <(find "$d" -name '*.md' -print0 | xargs -0 grep -ohE '`references/[^` ]+`' | tr -d '`' | sort -u)
+  [ "$missing" -eq 0 ] && ok "$name: backticked reference paths resolve"
+done
+
+# 6. The skill's own contract: 3-6 references, each linked from SKILL.md; no framework names.
+for d in skills/*/; do
+  d=${d%/}; name="$(basename "$d")"
+  refs=$(find "$d/references" -maxdepth 1 -name '*.md' 2>/dev/null | sort)
+  rc=$(printf '%s\n' "$refs" | grep -c . || true)
+  if [ "$rc" -ge 3 ] && [ "$rc" -le 6 ]; then ok "$name: $rc reference files"
+  else fail "$name: $rc reference files (3-6)"; fi
+  unlinked=0
+  for r in $refs; do
+    grep -qF "](references/$(basename "$r"))" "$d/SKILL.md" || { fail "$name: references/$(basename "$r") is not linked from SKILL.md"; unlinked=1; }
+  done
+  [ "$unlinked" -eq 0 ] && ok "$name: every reference linked from SKILL.md"
+done
+FRAMEWORKS='Textual|Ink|Ratatui|Bubble Tea|Bubbletea|Spectre\.Console|Terminal\.Gui|Rich|curses|ncurses|Lipgloss|Crossterm|Blessed|Clack|Inquirer|Cobra|Click|Typer'
+named=$(grep -rnwE "$FRAMEWORKS" skills || true)
+[ -z "$named" ] && ok "no UI framework or library named in the skill" \
+  || { fail "UI framework or library named in the skill (stack-agnostic rule):"; printf '%s\n' "$named" | sed 's/^/      /'; }
+
+# 5. Claude-only names must sit on a line (or right after a line) that names Claude Code.
+CLAUDE_ONLY='AskUserQuestion|subagent_type|ToolSearch|WebSearch|WebFetch|CLAUDE_SKILL_DIR|TodoWrite|TaskCreate|`Bash`|`Write`|Write\('
+bare=$(find skills -name '*.md' -print0 | xargs -0 awk -v re="$CLAUDE_ONLY" '
+  FNR==1 { prev="" }
+  $0 ~ re && $0 !~ /Claude Code/ && prev !~ /Claude Code|Claude$/ { print FILENAME":"FNR": "$0 }
+  { prev=$0 }')
+[ -z "$bare" ] && ok "no Claude-only name without a Claude Code label" \
+  || { fail "Claude-only name without a Claude Code label:"; printf '%s\n' "$bare" | sed 's/^/      /'; }
+
+# Repository rules and Markdown links (local file targets, fragments checked manually).
+if find . -path './.git' -prune -o -type f \( -path '*/agents/*.md' -o -path '*/.codex/agents/*.toml' \) -print | grep -q .; then
+  fail "agent definitions are prohibited"
+else ok "no agent definitions"; fi
+while IFS= read -r f; do
+  while IFS= read -r target; do
+    case "$target" in *://*|mailto:*|\#*|'') continue;; esac
+    target=${target%%#*}
+    [ -e "$(dirname "$f")/$target" ] || fail "$f: missing link $target"
+  done < <(awk '/^```/ {fence=!fence; next} !fence {gsub(/`[^`]*`/, ""); print}' "$f" | grep -oE '\]\([^ )]+\)' | sed -E 's/^\]\(//; s/\)$//')
+done < <(find skills -name '*.md'; printf '%s\n' README.md; git ls-files --cached --others --exclude-standard docs 2>/dev/null | grep '\.md$')
+
+# Only skill bodies name installed commands; reference tables can show project examples.
+for f in skills/*/SKILL.md; do
+  while IFS= read -r script; do
+    [ -f "$(dirname "$f")/$script" ] || fail "$f: missing bundled script $script"
+  done < <(grep -oE '`scripts/[^` ]+`' "$f" | tr -d '`' | sort -u)
+done
+
+for file in scripts/*.sh skills/*/scripts/*.sh; do
+  [ -e "$file" ] || continue
+  bash -n "$file" || fail "Bash syntax: $file"
+done
+
+if ! bash scripts/check-packages.sh; then fail "package checks"; fi
+
+echo
+if [ "$fails" -eq 0 ]; then echo "all checks passed"; else echo "$fails check(s) failed"; exit 1; fi

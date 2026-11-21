@@ -1,0 +1,17 @@
+{
+  "name": "pinkrooster-terminal-ux",
+  "version": "0.1.0",
+  "description": "Terminal UI/UX design skill: designs, builds and audits command-line output, interactive prompts and full-screen TUIs to a high UX standard, in any language or framework.",
+  "license": "MIT",
+  "homepage": "https://github.com/pinkroosterai/PinkRoosterTerminalUx",
+  "repository": "https://github.com/pinkroosterai/PinkRoosterTerminalUx",
+  "author": {
+    "name": "pinkroosterai"
+  },
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "displayName": "PinkRooster Terminal UX",
+  "suggestedPrompts": [
+    "Use terminal-ux to design a new CLI command with me.",
+    "Use terminal-ux to audit this tool's terminal output."
+  ]
+}
