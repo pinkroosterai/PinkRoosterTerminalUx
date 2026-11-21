@@ -7,3 +7,4 @@
 - Package for Claude Code, Codex, Antigravity and Pi plus the skills CLI, sharing `skills/`. No logo or icon in this release.
 - Add `scripts/check-skills.sh`, `scripts/check-packages.sh` and `scripts/test-check-skills.sh`, ported from PinkRoosterSkills, with checks for 3–6 linked references and no named UI frameworks.
 - Behaviour in a fresh harness session is checked by hand with `docs/testing.md`; no eval cases are shipped.
+- README in the PinkRooster style with the shared logo, and a dated compatibility record in `docs/compatibility.md`.

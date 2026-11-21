@@ -5,10 +5,13 @@ repo=$(cd "$(dirname "$0")/.." && pwd)
 scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
 for item in skills scripts README.md LICENSE AGENTS.md CHANGELOG.md \
-  .claude-plugin .codex-plugin .antigravity-plugin .agents package.json; do
+  .claude-plugin .codex-plugin .antigravity-plugin .agents package.json assets; do
   [ -e "$repo/$item" ] && cp -R "$repo/$item" "$scratch/"
 done
-if [ -f "$repo/docs/testing.md" ]; then mkdir -p "$scratch/docs"; cp "$repo/docs/testing.md" "$scratch/docs/"; fi
+mkdir -p "$scratch/docs"
+for doc in testing.md compatibility.md; do
+  [ -f "$repo/docs/$doc" ] && cp "$repo/docs/$doc" "$scratch/docs/"
+done
 cd "$scratch"
 bash scripts/check-skills.sh > /dev/null || { echo "FAIL: pristine copy does not pass"; exit 1; }
 

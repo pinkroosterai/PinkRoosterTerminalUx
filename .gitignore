@@ -5,3 +5,4 @@ results/
 # Only the project's own docs are tracked.
 docs/*
 !docs/testing.md
+!docs/compatibility.md
