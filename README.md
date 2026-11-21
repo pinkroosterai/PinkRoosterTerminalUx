@@ -107,8 +107,7 @@ the skill's opinion.
 ## Compatibility
 
 The common [Agent Skills format](https://agentskills.io/specification) makes the skill
-portable; it does not standardise tool APIs, permissions or command syntax. Version 0.1.0
-was dogfooded in Claude Code and its installation checked in Codex, Antigravity and Pi.
+portable; it does not standardise tool APIs, permissions or command syntax.
 
 `argument-hint` is a deliberate Claude Code frontmatter extension. Strict `skills-ref`
 validation reports it as unsupported; this is documented rather than counted as a pass.
